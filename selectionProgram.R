@@ -150,14 +150,14 @@ initializeCreateData <- function(replication){
 # variable appropriately
 ###############################################################
 # Phenotyping for genomic selection.
+# Should work for four locus category method
 phenotypeGenomic <- function(cycle, breedingData){
 	genRows <- which(breedingData$records$cycle == cycle)
 	qtl <- speciesData$genArch$locusList
 	qtlDosage <- (breedingData$genoMat[genRows, qtl*2 - 1] + breedingData$genoMat[genRows, qtl*2]) / 2
 	breedingData$records$genoVal[genRows] <- speciesData$genArch$genoBase + c(qtlDosage %*% speciesData$genArch$effects)
 	
-	if (cycle == switchCyc | (cycle > switchCyc & cycle %% 2 == 1)){
-		# No phenotyping at the transition or alternate cycles for GS
+	if (cycle == switchCyc | (cycle > switchCyc & cycle %% 2 == 1)){ # No phenotyping at the transition or alternate cycles for GS
 		phenRows <- 0
 	} else{ # Here we are phenotyping
 		if (cycle < switchCyc){
@@ -274,55 +274,109 @@ selectGenomicUnobsQ <- function(cycle, breedingData){
 # the marker effects and variances.  I am retaining above the previous versions for historical
 # reasons and in case I'm wrong.
 selectGenomicObsQ <- function(cycle, breedingData){
-	thisCycle <- which(breedingData$records$cycle == cycle)
-	if (cycle < switchCyc){ # Phenotypic selection
-		cat(cycle, "selectPhenotypic_ObsQ", "\n")
-		selInd <- order(breedingData$records$phenoVal[thisCycle], decreasing=TRUE)
-		breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelect]]
-	} else{
-		nLoc <- nrow(speciesData$map)
-		eo <- 1:nLoc * 2
-		if (cycle %% 2 == 0){ # Calculate effect GEBVs with new phenotypes
-			if (cycle == switchCyc){ # Create prior marker effect estimates coming out of phenotypic selection
-			  # Simulations in the baseline setting estimate that marker effects and variance thereof are:
-			  # *Unconditional on the identity of the ancestral allele: mrkEffEst=0; mrkEffVar=0.366
-			  # *Conditional on the identity of the ancestral allele: mrkEffEst=0.224 (ancestral is favorable); mrkEffVar=0.316
+  thisCycle <- which(breedingData$records$cycle == cycle)
+  if (cycle < switchCyc){ # Phenotypic selection
+    cat(cycle, "selectPhenotypic_ObsQ", "\n")
+    selInd <- order(breedingData$records$phenoVal[thisCycle], decreasing=TRUE)
+    breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelect]]
+  } else{
+    nLoc <- nrow(speciesData$map)
+    eo <- 1:nLoc * 2
+    if (cycle %% 2 == 0){ # Calculate effect GEBVs with new phenotypes
+      if (cycle == switchCyc){ # Create prior marker effect estimates coming out of phenotypic selection
+        # Simulations in the baseline setting estimate that marker effects and variance thereof are:
+        # *Unconditional on the identity of the ancestral allele: mrkEffEst=0; mrkEffVar=0.366
+        # *Conditional on the identity of the ancestral allele: mrkEffEst=0.224 (ancestral is favorable); mrkEffVar=0.316
         # Those values need to be set in postPhenSelMrkEffEst and postPhenSelMrkEffVar
         # Currently set up for the unconditional version
-			  newPheno <- which(!is.na(breedingData$records$phenoVal))
-				cat(cycle, "selectGenomicRR_FirstModelRR", length(newPheno), "\n")
-				errVar <- breedingData$stdDevErr^2
-				breedingData$mrkEffEst <- breedingData$postPhenSelMrkEffEst * breedingData$ancAllele
-				breedingData$mrkEffVar <- rep(breedingData$postPhenSelMrkEffVar, nLoc)
-			  mrkDosage <- (breedingData$genoMat[newPheno,eo - 1] + breedingData$genoMat[newPheno,eo]) / 2
-			  breedingData$meanPhen <- mean(breedingData$records$phenoVal[newPheno] - mrkDosage %*% breedingData$mrkEffEst)
-			} else{
-				errVar <- breedingData$stdDevErr^2 / 2 #WARNING! This assumes two-rep phenotyping
-				newPheno <- cycle - (1:2)
-				newPheno <- which(breedingData$records$cycle %in% newPheno)
-				newPheno <- newPheno[!is.na(breedingData$records$phenoVal[newPheno])]
-				cat(cycle, "selectGenomicRR_ModelUpdate_ObsQ", length(newPheno), "\n")
-				mrkDosage <- (breedingData$genoMat[newPheno,eo - 1] + breedingData$genoMat[newPheno,eo]) / 2
-			}
-			mrkEffEst <- breedingData$mrkEffEst
-			mrkEffVar <- breedingData$mrkEffVar
-			covPhenMrk <- sapply(1:ncol(mrkDosage), FUN=function(col) mrkDosage[,col] * mrkEffVar[col]) # t(cov(\beta, y))
-			varPhen <- tcrossprod(covPhenMrk, mrkDosage) + diag(errVar, length(newPheno))
-			regCoef <- t(solve(varPhen, covPhenMrk))
-			breedingData$mrkEffEst <- mrkEffEst + regCoef %*% (breedingData$records$phenoVal[newPheno] - breedingData$meanPhen - mrkDosage %*% mrkEffEst)
-			breedingData$mrkEffVar <- mrkEffVar - diag(regCoef %*% covPhenMrk)
-		} else{ # Calculate effect GEBVs with previously estimated effects
-			cat(cycle, "selectGenomicRR_PreviousModel_ObsQ", "\n")
-		}
-		mrkDosage <- (breedingData$genoMat[thisCycle,eo - 1] + breedingData$genoMat[thisCycle,eo]) / 2
-		breedingData$records$genoHat[thisCycle] <- mrkDosage %*% breedingData$mrkEffEst
-		selInd <- order(breedingData$records$genoHat[thisCycle], decreasing=TRUE)
-		breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelectGS[cycle %% 2 + 1]]]
-	}#END doing GS
-	breedingData$allSelectSet <- c(breedingData$allSelectSet, breedingData$selectSet)
-	breedingData$selGenoVal <- c(mean(breedingData$records$genoVal[breedingData$selectSet]), NA)
-	return(breedingData)
+        newPheno <- which(!is.na(breedingData$records$phenoVal))
+        cat(cycle, "selectGenomicRR_FirstModelRR", length(newPheno), "\n")
+        errVar <- breedingData$stdDevErr^2
+        breedingData$mrkEffEst <- breedingData$postPhenSelMrkEffEst * breedingData$ancAllele
+        breedingData$mrkEffVar <- rep(breedingData$postPhenSelMrkEffVar, nLoc)
+        mrkDosage <- (breedingData$genoMat[newPheno,eo - 1] + breedingData$genoMat[newPheno,eo]) / 2
+        breedingData$meanPhen <- mean(breedingData$records$phenoVal[newPheno] - mrkDosage %*% breedingData$mrkEffEst)
+      } else{
+        errVar <- breedingData$stdDevErr^2 / 2 #WARNING! This assumes two-rep phenotyping
+        newPheno <- cycle - (1:2)
+        newPheno <- which(breedingData$records$cycle %in% newPheno)
+        newPheno <- newPheno[!is.na(breedingData$records$phenoVal[newPheno])]
+        cat(cycle, "selectGenomicRR_ModelUpdate_ObsQ", length(newPheno), "\n")
+        mrkDosage <- (breedingData$genoMat[newPheno,eo - 1] + breedingData$genoMat[newPheno,eo]) / 2
+      }
+      mrkEffEst <- breedingData$mrkEffEst
+      mrkEffVar <- breedingData$mrkEffVar
+      covPhenMrk <- sapply(1:ncol(mrkDosage), FUN=function(col) mrkDosage[,col] * mrkEffVar[col]) # t(cov(\beta, y))
+      varPhen <- tcrossprod(covPhenMrk, mrkDosage) + diag(errVar, length(newPheno))
+      regCoef <- t(solve(varPhen, covPhenMrk))
+      breedingData$mrkEffEst <- mrkEffEst + regCoef %*% (breedingData$records$phenoVal[newPheno] - breedingData$meanPhen - mrkDosage %*% mrkEffEst)
+      breedingData$mrkEffVar <- mrkEffVar - diag(regCoef %*% covPhenMrk)
+    } else{ # Calculate effect GEBVs with previously estimated effects
+      cat(cycle, "selectGenomicRR_PreviousModel_ObsQ", "\n")
+    }
+    mrkDosage <- (breedingData$genoMat[thisCycle,eo - 1] + breedingData$genoMat[thisCycle,eo]) / 2
+    breedingData$records$genoHat[thisCycle] <- mrkDosage %*% breedingData$mrkEffEst
+    selInd <- order(breedingData$records$genoHat[thisCycle], decreasing=TRUE)
+    breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelectGS[cycle %% 2 + 1]]]
+  }#END doing GS
+  breedingData$allSelectSet <- c(breedingData$allSelectSet, breedingData$selectSet)
+  breedingData$selGenoVal <- c(mean(breedingData$records$genoVal[breedingData$selectSet]), NA)
+  return(breedingData)
 }#END selectGenomicObsQ
+
+# Genomic selection where loci are split into four categories, all combinations of observed vs not and causal vs not.
+selectGenomic4LocCat <- function(cycle, breedingData){
+  thisCycle <- which(breedingData$records$cycle == cycle)
+  if (cycle < switchCyc){ # Phenotypic selection
+    cat(cycle, "selectPhenotypic_ObsQ", "\n")
+    selInd <- order(breedingData$records$phenoVal[thisCycle], decreasing=TRUE)
+    breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelect]]
+  } else{
+    mrk <- breedingData$observedLoc
+    nMrk <- length(mrk)
+    eo <- mrk * 2
+    if (cycle %% 2 == 0){ # Calculate effect GEBVs with new phenotypes
+      if (cycle == switchCyc){ # Create prior marker effect estimates coming out of phenotypic selection
+        # Simulations in the baseline setting estimate that marker effects and variance thereof are:
+        # WARNING: do these baselines assume all loci are QTL???
+        # *Unconditional on the identity of the ancestral allele: mrkEffEst=0; mrkEffVar=0.366
+        # *Conditional on the identity of the ancestral allele: mrkEffEst=0.224 (ancestral is favorable); mrkEffVar=0.316
+        # Those values need to be set in postPhenSelMrkEffEst and postPhenSelMrkEffVar
+        # Currently set up for the unconditional version
+        newPheno <- which(!is.na(breedingData$records$phenoVal))
+        cat(cycle, "selectGenomicRR_FirstModelRR", length(newPheno), "\n")
+        errVar <- breedingData$stdDevErr^2
+        breedingData$mrkEffEst <- breedingData$postPhenSelMrkEffEst * breedingData$ancAllele[mrk]
+        breedingData$mrkEffVar <- rep(breedingData$postPhenSelMrkEffVar, nMrk)
+        mrkDosage <- (breedingData$genoMat[newPheno,eo - 1] + breedingData$genoMat[newPheno,eo]) / 2
+        breedingData$meanPhen <- mean(breedingData$records$phenoVal[newPheno] - mrkDosage %*% breedingData$mrkEffEst)
+      } else{
+        errVar <- breedingData$stdDevErr^2 / 2 #WARNING! This assumes two-rep phenotyping
+        newPheno <- cycle - (1:2)
+        newPheno <- which(breedingData$records$cycle %in% newPheno)
+        newPheno <- newPheno[!is.na(breedingData$records$phenoVal[newPheno])]
+        cat(cycle, "selectGenomicRR_ModelUpdate_ObsQ", length(newPheno), "\n")
+        mrkDosage <- (breedingData$genoMat[newPheno,eo - 1] + breedingData$genoMat[newPheno,eo]) / 2
+      }
+      mrkEffEst <- breedingData$mrkEffEst
+      mrkEffVar <- breedingData$mrkEffVar
+      covPhenMrk <- sapply(1:ncol(mrkDosage), FUN=function(col) mrkDosage[,col] * mrkEffVar[col]) # t(cov(beta, y))
+      varPhen <- tcrossprod(covPhenMrk, mrkDosage) + diag(errVar, length(newPheno))
+      regCoef <- t(solve(varPhen, covPhenMrk))
+      breedingData$mrkEffEst <- mrkEffEst + regCoef %*% (breedingData$records$phenoVal[newPheno] - breedingData$meanPhen - mrkDosage %*% mrkEffEst)
+      breedingData$mrkEffVar <- mrkEffVar - diag(regCoef %*% covPhenMrk)
+    } else{ # Calculate effect GEBVs with previously estimated effects
+      cat(cycle, "selectGenomicRR_PreviousModel_ObsQ", "\n")
+    }
+    mrkDosage <- (breedingData$genoMat[thisCycle,eo - 1] + breedingData$genoMat[thisCycle,eo]) / 2
+    breedingData$records$genoHat[thisCycle] <- mrkDosage %*% breedingData$mrkEffEst
+    selInd <- order(breedingData$records$genoHat[thisCycle], decreasing=TRUE)
+    breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelectGS[cycle %% 2 + 1]]]
+  }#END doing GS
+  breedingData$allSelectSet <- c(breedingData$allSelectSet, breedingData$selectSet)
+  breedingData$selGenoVal <- c(mean(breedingData$records$genoVal[breedingData$selectSet]), NA)
+  return(breedingData)
+}#END selectGenomic4LocCat
 
 # Select based on phenotype
 selectPheno <- function(cycle, breedingData){
@@ -611,75 +665,148 @@ analysisUnobsQ <- function(cycle, breedingData){
 }#END analysisUnobsQ
 
 analysisObsQ <- function(cycle, breedingData){
-	cat(cycle, "analysisLocalStats_ObsQ", "\n")
-	thisCycle <- which(breedingData$records$cycle == cycle)
-	thin <- nCycles / 40
-	# Calculate equiVar; segmentVar; chromosomeVar; genoVar
-	nLoc <- nrow(speciesData$map)
-	eo <- 1:nLoc*2
-	locDosage <- breedingData$genoMat[thisCycle, eo - 1] + breedingData$genoMat[thisCycle, eo]
-	qtl <- speciesData$genArch$locusList
-	qtlDosage <- locDosage[,qtl]
-	qtlDosageVar <- apply(qtlDosage, 2, var)
-	totEquiVar <- c(crossprod(speciesData$genArch$effects^2, qtlDosageVar))
-	
-	# Calculate the variance of a segment (could be a whole chromosome)
-	# NOTE: assumes that the segment does NOT overlap two chromosomes
-	# Assume the simplest additive gene action for now
-	# Only do this once equilibrium reached (see below)
-	# WARNING depends on calculating equiVar before hand
-	calcSegmentVar <- function(startPos, segSize, calcEquiVar=FALSE, calcSegAcc=FALSE, calcPoly=FALSE){
-		segGenoVals <- NA
-		if (calcEquiVar) equiVar <- NA else equiVar <- NULL
-		if (calcSegAcc) segAcc <- NA else segAcc <- NULL
-		if (calcPoly) segLocPoly <- NA else segLocPoly <- NULL
-		segLoci <- which(speciesData$map[,3] >= startPos & speciesData$map[,3] < startPos + segSize) # segLoci in locus order
-		if (length(segLoci > 0)){
-			segQTL <- which(qtl %in% segLoci) # segQTL in qtl order
-			segGenoVals <- qtlDosage[,segQTL, drop=FALSE] %*% speciesData$genArch$effects[segQTL]
-			if (calcEquiVar) equiVar <- crossprod(speciesData$genArch$effects[segQTL]^2, qtlDosageVar[segQTL])
-			if (calcSegAcc){
-				segGenoHat <- locDosage[, segLoci, drop=FALSE] %*% breedingData$mrkEffEst[segLoci]
-				segAcc <- cor(segGenoVals, segGenoHat)
-			}
-			if (calcPoly){ # if all ind are heterozygous, it will look monomorphic
-				segLocPoly <- sum(apply(locDosage[,segLoci, drop=FALSE], 2, sd) > 0) / length(segLoci)
-			}
-		}
-		return(c(var(segGenoVals), equiVar, segAcc, segLocPoly))
-	}
-	
-	# Calculate segment variances every thin cycles on the whole genome
-	chrVar <- NA
-	segVar10 <- matrix(NA, 4, 105)
-	if (cycle >= switchCyc & cycle %% thin == 0){
-		chrVar <- sapply(0:6 * 150, calcSegmentVar, segSize=150) # WARNING chr size of 150 hardwired
-		seg10 <- rep(0:6 * 150, each=15) + 0:14 * 10
-		segVar10 <- sapply(seg10, calcSegmentVar, segSize=10, calcEquiVar=TRUE, calcSegAcc=TRUE, calcPoly=TRUE)
-		breedingData$localStats <- c(breedingData$localStats, list(chrVar, segVar10))
-	}
-		
-	# Collect some information on this cycle
-	genoMean <- mean(breedingData$records$genoVal[thisCycle])
-	genoVar <- var(breedingData$records$genoVal[thisCycle])
-	thisCycleAccuracy <- cor(breedingData$records$genoVal[thisCycle], breedingData$records$genoHat[thisCycle])
-	breedingData$history <- rbind(breedingData$history, data.frame(cycle=cycle, genoBase=speciesData$genArch$genoBase, nQTLpoly=sum(apply(qtlDosage, 2, sd) > 0), nQTL=length(qtl), nMrkPoly=sum(apply(locDosage[,-qtl], 2, sd) > 0), nMrk=nLoc - length(qtl), meanGenoVal=genoMean, accuracy=thisCycleAccuracy, genoVar=genoVar, totChrVar=sum(chrVar, na.rm=TRUE), totSegVar=sum(segVar10[1,], na.rm=TRUE), equiVar=totEquiVar, selGenoValMain=breedingData$selGenoVal[1], selGenoValSpec=breedingData$selGenoVal[2]))
-	
-	# If there is mutation, recalibrate until equilibrium
-	if (!(setting %in% c(321, 322, 323, 325, 326, 327, 401, 402, 411, 421))){
-	if (exists("mutParms", where=speciesData)){
-		reEquil <- switchCyc / 10
-		if (cycle <= switchCyc & cycle %% reEquil == 0){
-			meanGenoVar <- mean(breedingData$history$genoVar[(cycle - reEquil)+1:reEquil], na.rm=TRUE)
-			h2 <- breedingData$heritability
-			breedingData$stdDevErr <- sqrt(meanGenoVar * (1 - h2) / h2)
-			cat(cycle, "Recalc stdDevErr:", breedingData$stdDevErr, "\n")
-		}
-		if (setting == 312 & cycle == switchCyc) speciesData$mutParms <<- NULL
-	}
-}
-	return(breedingData)
+  cat(cycle, "analysisLocalStats_ObsQ", "\n")
+  thisCycle <- which(breedingData$records$cycle == cycle)
+  thin <- nCycles / 40
+  # Calculate equiVar; segmentVar; chromosomeVar; genoVar
+  nLoc <- nrow(speciesData$map)
+  eo <- 1:nLoc*2
+  locDosage <- breedingData$genoMat[thisCycle, eo - 1] + breedingData$genoMat[thisCycle, eo]
+  qtl <- speciesData$genArch$locusList
+  qtlDosage <- locDosage[,qtl]
+  qtlDosageVar <- apply(qtlDosage, 2, var)
+  totEquiVar <- c(crossprod(speciesData$genArch$effects^2, qtlDosageVar))
+  
+  # Calculate the variance of a segment (could be a whole chromosome)
+  # NOTE: assumes that the segment does NOT overlap two chromosomes
+  # Assume the simplest additive gene action for now
+  # Only do this once equilibrium reached (see below)
+  # WARNING depends on calculating equiVar before hand
+  calcSegmentVar <- function(startPos, segSize, calcEquiVar=FALSE, calcSegAcc=FALSE, calcPoly=FALSE){
+    segGenoVals <- NA
+    if (calcEquiVar) equiVar <- NA else equiVar <- NULL
+    if (calcSegAcc) segAcc <- NA else segAcc <- NULL
+    if (calcPoly) segLocPoly <- NA else segLocPoly <- NULL
+    segLoci <- which(speciesData$map[,3] >= startPos & speciesData$map[,3] < startPos + segSize) # segLoci in locus order
+    if (length(segLoci > 0)){
+      segQTL <- which(qtl %in% segLoci) # segQTL in qtl order
+      segGenoVals <- qtlDosage[,segQTL, drop=FALSE] %*% speciesData$genArch$effects[segQTL]
+      if (calcEquiVar) equiVar <- crossprod(speciesData$genArch$effects[segQTL]^2, qtlDosageVar[segQTL])
+      if (calcSegAcc){
+        segGenoHat <- locDosage[, segLoci, drop=FALSE] %*% breedingData$mrkEffEst[segLoci]
+        segAcc <- cor(segGenoVals, segGenoHat)
+      }
+      if (calcPoly){ # if all ind are heterozygous, it will look monomorphic
+        segLocPoly <- sum(apply(locDosage[,segLoci, drop=FALSE], 2, sd) > 0) / length(segLoci)
+      }
+    }
+    return(c(var(segGenoVals), equiVar, segAcc, segLocPoly))
+  }
+  
+  # Calculate segment variances every thin cycles on the whole genome
+  chrVar <- NA
+  segVar10 <- matrix(NA, 4, 105)
+  if (cycle >= switchCyc & cycle %% thin == 0){
+    chrVar <- sapply(0:6 * 150, calcSegmentVar, segSize=150) # WARNING chr size of 150 hardwired
+    seg10 <- rep(0:6 * 150, each=15) + 0:14 * 10
+    segVar10 <- sapply(seg10, calcSegmentVar, segSize=10, calcEquiVar=TRUE, calcSegAcc=TRUE, calcPoly=TRUE)
+    breedingData$localStats <- c(breedingData$localStats, list(chrVar, segVar10))
+  }
+  
+  # Collect some information on this cycle
+  genoMean <- mean(breedingData$records$genoVal[thisCycle])
+  genoVar <- var(breedingData$records$genoVal[thisCycle])
+  thisCycleAccuracy <- cor(breedingData$records$genoVal[thisCycle], breedingData$records$genoHat[thisCycle])
+  breedingData$history <- rbind(breedingData$history, data.frame(cycle=cycle, genoBase=speciesData$genArch$genoBase, nQTLpoly=sum(apply(qtlDosage, 2, sd) > 0), nQTL=length(qtl), nMrkPoly=sum(apply(locDosage[,-qtl], 2, sd) > 0), nMrk=nLoc - length(qtl), meanGenoVal=genoMean, accuracy=thisCycleAccuracy, genoVar=genoVar, totChrVar=sum(chrVar, na.rm=TRUE), totSegVar=sum(segVar10[1,], na.rm=TRUE), equiVar=totEquiVar, selGenoValMain=breedingData$selGenoVal[1], selGenoValSpec=breedingData$selGenoVal[2]))
+  
+  # If there is mutation, recalibrate until equilibrium
+  if (!(setting %in% c(321, 322, 323, 325, 326, 327, 401, 402, 411, 421))){
+    if (exists("mutParms", where=speciesData)){
+      reEquil <- switchCyc / 10
+      if (cycle <= switchCyc & cycle %% reEquil == 0){
+        meanGenoVar <- mean(breedingData$history$genoVar[(cycle - reEquil)+1:reEquil], na.rm=TRUE)
+        h2 <- breedingData$heritability
+        breedingData$stdDevErr <- sqrt(meanGenoVar * (1 - h2) / h2)
+        cat(cycle, "Recalc stdDevErr:", breedingData$stdDevErr, "\n")
+      }
+      if (setting == 312 & cycle == switchCyc) speciesData$mutParms <<- NULL
+    }
+  }
+  return(breedingData)
 }#END analysisObsQ
+
+analysis4LocCat <- function(cycle, breedingData){
+  cat(cycle, "analysis4LocCat", "\n")
+  thisCycle <- which(breedingData$records$cycle == cycle)
+  thin <- nCycles / 40
+  # Calculate equiVar; segmentVar; chromosomeVar; genoVar
+  nLoc <- nrow(speciesData$map)
+  eo <- 1:nLoc*2
+  locDosage <- (breedingData$genoMat[thisCycle, eo - 1] + breedingData$genoMat[thisCycle, eo]) / 2
+  qtl <- speciesData$genArch$locusList
+  qtlDosage <- locDosage[,qtl]
+  qtlDosageVar <- apply(qtlDosage, 2, var)
+  totEquiVar <- c(crossprod(speciesData$genArch$effects^2, qtlDosageVar))
+  mrk <- breedingData$observedLoc
+  
+  # Calculate the variance of a segment (could be a whole chromosome)
+  # NOTE: assumes that the segment does NOT overlap two chromosomes
+  # Assume the simplest additive gene action for now
+  # Only do this once equilibrium reached (see below)
+  # WARNING depends on calculating equiVar before hand
+  calcSegmentVar <- function(startPos, segSize, calcEquiVar=FALSE, calcSegAcc=FALSE, calcPoly=FALSE){
+    segGenoVals <- NA
+    if (calcEquiVar) equiVar <- NA else equiVar <- NULL
+    if (calcSegAcc) segAcc <- NA else segAcc <- NULL
+    if (calcPoly) segLocPoly <- NA else segLocPoly <- NULL
+    segLoci <- which(speciesData$map[,3] >= startPos & speciesData$map[,3] < startPos + segSize) # segLoci in locus order
+    if (length(segLoci > 0)){
+      segQTL <- which(qtl %in% segLoci) # segQTL in qtl order
+      segGenoVals <- qtlDosage[,segQTL, drop=FALSE] %*% speciesData$genArch$effects[segQTL]
+      if (calcEquiVar) equiVar <- crossprod(speciesData$genArch$effects[segQTL]^2, qtlDosageVar[segQTL])
+      if (calcSegAcc){ # Here is where things need changing for markers
+        segGenoHat <- locDosage[, intersect(mrk, segLoci), drop=FALSE] %*% breedingData$mrkEffEst[mrk %in% segLoci]
+        segAcc <- cor(segGenoVals, segGenoHat)
+      }
+      if (calcPoly){ # if all ind are heterozygous, it will erroneously look monomorphic
+        # Might be interesting to split this into the four categories of loci...
+        segLocPoly <- sum(apply(locDosage[,segLoci, drop=FALSE], 2, sd) > 0) / length(segLoci)
+      }
+    }
+    return(c(var(segGenoVals), equiVar, segAcc, segLocPoly))
+  }
+  
+  # Calculate segment variances every thin cycles on the whole genome
+  chrVar <- NA
+  segVar10 <- matrix(NA, 4, 105)
+  if (cycle >= switchCyc & cycle %% thin == 0){
+    chrVar <- sapply(0:6 * 150, calcSegmentVar, segSize=150) # WARNING chr size of 150 hardwired
+    seg10 <- rep(0:6 * 150, each=15) + 0:14 * 10
+    segVar10 <- sapply(seg10, calcSegmentVar, segSize=10, calcEquiVar=TRUE, calcSegAcc=TRUE, calcPoly=TRUE)
+    breedingData$localStats <- c(breedingData$localStats, list(chrVar, segVar10))
+  }
+  
+  # Collect some information on this cycle
+  genoMean <- mean(breedingData$records$genoVal[thisCycle])
+  genoVar <- var(breedingData$records$genoVal[thisCycle])
+  thisCycleAccuracy <- cor(breedingData$records$genoVal[thisCycle], breedingData$records$genoHat[thisCycle])
+  breedingData$history <- rbind(breedingData$history, data.frame(cycle=cycle, genoBase=speciesData$genArch$genoBase, nQTLpoly=sum(apply(qtlDosage, 2, sd) > 0), nQTL=length(qtl), nMrkPoly=sum(apply(locDosage[,-qtl], 2, sd) > 0), nMrk=nLoc - length(qtl), meanGenoVal=genoMean, accuracy=thisCycleAccuracy, genoVar=genoVar, totChrVar=sum(chrVar, na.rm=TRUE), totSegVar=sum(segVar10[1,], na.rm=TRUE), equiVar=totEquiVar, selGenoValMain=breedingData$selGenoVal[1], selGenoValSpec=breedingData$selGenoVal[2]))
+  
+  # If there is mutation, recalibrate until equilibrium
+  if (!(setting %in% c(321, 322, 323, 325, 326, 327, 401, 402, 411, 421))){
+    if (exists("mutParms", where=speciesData)){
+      reEquil <- switchCyc / 10
+      if (cycle <= switchCyc & cycle %% reEquil == 0){
+        meanGenoVar <- mean(breedingData$history$genoVar[(cycle - reEquil)+1:reEquil], na.rm=TRUE)
+        h2 <- breedingData$heritability
+        breedingData$stdDevErr <- sqrt(meanGenoVar * (1 - h2) / h2)
+        cat(cycle, "Recalc stdDevErr:", breedingData$stdDevErr, "\n")
+      }
+      if (setting == 312 & cycle == switchCyc) speciesData$mutParms <<- NULL
+    }
+  }
+  return(breedingData)
+}#END analysis4LocCat
 
 analysisPheno <- function(cycle, breedingData){
   cat(cycle, "analysisPheno", "\n")
