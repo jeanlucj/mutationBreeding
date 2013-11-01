@@ -266,7 +266,7 @@ selectGenomicUnobsQ <- function(cycle, breedingData){
 	}
 	breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelect]]
 	breedingData$allSelectSet <- c(breedingData$allSelectSet, breedingData$selectSet)
-	breedingData$selGenoVal <- c(mean(breedingData$records$genoVal[breedingData$selectSet]), NA)
+	breedingData$selGenoVal <- mean(breedingData$records$genoVal[breedingData$selectSet])
 	return(breedingData)
 }#END selectGenomicUnobsQ
 
@@ -320,7 +320,7 @@ selectGenomicObsQ <- function(cycle, breedingData){
     breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelectGS[cycle %% 2 + 1]]]
   }#END doing GS
   breedingData$allSelectSet <- c(breedingData$allSelectSet, breedingData$selectSet)
-  breedingData$selGenoVal <- c(mean(breedingData$records$genoVal[breedingData$selectSet]), NA)
+  breedingData$selGenoVal <- mean(breedingData$records$genoVal[breedingData$selectSet])
   return(breedingData)
 }#END selectGenomicObsQ
 
@@ -374,7 +374,7 @@ selectGenomic4LocCat <- function(cycle, breedingData){
     breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelectGS[cycle %% 2 + 1]]]
   }#END doing GS
   breedingData$allSelectSet <- c(breedingData$allSelectSet, breedingData$selectSet)
-  breedingData$selGenoVal <- c(mean(breedingData$records$genoVal[breedingData$selectSet]), NA)
+  breedingData$selGenoVal <- mean(breedingData$records$genoVal[breedingData$selectSet])
   return(breedingData)
 }#END selectGenomic4LocCat
 
@@ -429,7 +429,7 @@ selectGenomicObsQrr <- function(cycle, breedingData){
 		breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelectGS[cycle %% 2 + 1]]]
 	}
 	breedingData$allSelectSet <- c(breedingData$allSelectSet, breedingData$selectSet)
-	breedingData$selGenoVal <- c(mean(breedingData$records$genoVal[breedingData$selectSet]), NA)
+	breedingData$selGenoVal <- mean(breedingData$records$genoVal[breedingData$selectSet])
 	return(breedingData)
 }#END selectGenomicObsQTLrr
 
@@ -575,7 +575,7 @@ selectGenomicObsQvarNGP <- function(cycle, breedingData){
 	}
 	breedingData$selectSet <- thisCycle[selInd[1:breedingData$nToSelect]]
 	breedingData$allSelectSet <- c(breedingData$allSelectSet, breedingData$selectSet)
-	breedingData$selGenoVal <- c(mean(breedingData$records$genoVal[breedingData$selectSet]), NA)
+	breedingData$selGenoVal <- mean(breedingData$records$genoVal[breedingData$selectSet])
 	return(breedingData)
 }#END selectGenomicObsQvarNGP
 
@@ -647,7 +647,7 @@ analysisUnobsQ <- function(cycle, breedingData){
 	genoMean <- mean(breedingData$records$genoVal[thisCycle])
 	genoVar <- var(breedingData$records$genoVal[thisCycle])
 	thisCycleAccuracy <- cor(breedingData$records$genoVal[thisCycle], breedingData$records$genoHat[thisCycle])
-	breedingData$history <- rbind(breedingData$history, data.frame(cycle=cycle, genoBase=speciesData$genArch$genoBase, nQTLpoly=sum(apply(qtlDosage, 2, sd) > 0), nQTL=length(qtl), nMrkPoly=sum(apply(mrkDosage, 2, sd) > 0), nMrk=nLoc - length(qtl), meanGenoVal=genoMean, accuracy=thisCycleAccuracy, genoVar=genoVar, totChrVar=sum(chrVar, na.rm=TRUE), totSegVar=sum(segVar10[1,], na.rm=TRUE), equiVar=totEquiVar, selGenoValMain=breedingData$selGenoVal[1], selGenoValSpec=breedingData$selGenoVal[2]))
+	breedingData$history <- rbind(breedingData$history, data.frame(cycle=cycle, genoBase=speciesData$genArch$genoBase, nQTLpoly=sum(apply(qtlDosage, 2, sd) > 0), nQTL=length(qtl), nMrkPoly=sum(apply(mrkDosage, 2, sd) > 0), nMrk=nLoc - length(qtl), meanGenoVal=genoMean, accuracy=thisCycleAccuracy, genoVar=genoVar, totChrVar=sum(chrVar, na.rm=TRUE), totSegVar=sum(segVar10[1,], na.rm=TRUE), equiVar=totEquiVar, selGenoValMain=breedingData$selGenoVal))
 	
 	# If there is mutation, recalibrate until equilibrium
 	if (!(setting %in% c(321, 322, 323, 325, 326, 327, 401, 402, 411, 421))){
@@ -717,7 +717,7 @@ analysisObsQ <- function(cycle, breedingData){
   genoMean <- mean(breedingData$records$genoVal[thisCycle])
   genoVar <- var(breedingData$records$genoVal[thisCycle])
   thisCycleAccuracy <- cor(breedingData$records$genoVal[thisCycle], breedingData$records$genoHat[thisCycle])
-  breedingData$history <- rbind(breedingData$history, data.frame(cycle=cycle, genoBase=speciesData$genArch$genoBase, nQTLpoly=sum(apply(qtlDosage, 2, sd) > 0), nQTL=length(qtl), nMrkPoly=sum(apply(locDosage[,-qtl], 2, sd) > 0), nMrk=nLoc - length(qtl), meanGenoVal=genoMean, accuracy=thisCycleAccuracy, genoVar=genoVar, totChrVar=sum(chrVar, na.rm=TRUE), totSegVar=sum(segVar10[1,], na.rm=TRUE), equiVar=totEquiVar, selGenoValMain=breedingData$selGenoVal[1], selGenoValSpec=breedingData$selGenoVal[2]))
+  breedingData$history <- rbind(breedingData$history, data.frame(cycle=cycle, genoBase=speciesData$genArch$genoBase, nQTLpoly=sum(apply(qtlDosage, 2, sd) > 0), nQTL=length(qtl), nMrkPoly=sum(apply(locDosage[,-qtl], 2, sd) > 0), nMrk=nLoc - length(qtl), meanGenoVal=genoMean, accuracy=thisCycleAccuracy, genoVar=genoVar, totChrVar=sum(chrVar, na.rm=TRUE), totSegVar=sum(segVar10[1,], na.rm=TRUE), equiVar=totEquiVar, selGenoValMain=breedingData$selGenoVal))
   
   # If there is mutation, recalibrate until equilibrium
   if (!(setting %in% c(321, 322, 323, 325, 326, 327, 401, 402, 411, 421))){
@@ -790,21 +790,13 @@ analysis4LocCat <- function(cycle, breedingData){
   genoMean <- mean(breedingData$records$genoVal[thisCycle])
   genoVar <- var(breedingData$records$genoVal[thisCycle])
   thisCycleAccuracy <- cor(breedingData$records$genoVal[thisCycle], breedingData$records$genoHat[thisCycle])
-  breedingData$history <- rbind(breedingData$history, data.frame(cycle=cycle, genoBase=speciesData$genArch$genoBase, nQTLpoly=sum(apply(qtlDosage, 2, sd) > 0), nQTL=length(qtl), nMrkPoly=sum(apply(locDosage[,-qtl], 2, sd) > 0), nMrk=nLoc - length(qtl), meanGenoVal=genoMean, accuracy=thisCycleAccuracy, genoVar=genoVar, totChrVar=sum(chrVar, na.rm=TRUE), totSegVar=sum(segVar10[1,], na.rm=TRUE), equiVar=totEquiVar, selGenoValMain=breedingData$selGenoVal[1], selGenoValSpec=breedingData$selGenoVal[2]))
-  
-  # If there is mutation, recalibrate until equilibrium
-  if (!(setting %in% c(321, 322, 323, 325, 326, 327, 401, 402, 411, 421))){
-    if (exists("mutParms", where=speciesData)){
-      reEquil <- switchCyc / 10
-      if (cycle <= switchCyc & cycle %% reEquil == 0){
-        meanGenoVar <- mean(breedingData$history$genoVar[(cycle - reEquil)+1:reEquil], na.rm=TRUE)
-        h2 <- breedingData$heritability
-        breedingData$stdDevErr <- sqrt(meanGenoVar * (1 - h2) / h2)
-        cat(cycle, "Recalc stdDevErr:", breedingData$stdDevErr, "\n")
-      }
-      if (setting == 312 & cycle == switchCyc) speciesData$mutParms <<- NULL
-    }
-  }
+  # Number of loci polymorphic in the different categories
+  locPoly <- which(apply(locDosage, 2, sd) > 0)
+  mrkQtl <- intersect(locPoly, intersect(mrk, qtl))
+  notMrkQtl <- intersect(locPoly, setdiff(qtl, mrk))
+  mrkNotQtl <- intersect(locPoly, setdiff(mkr, qtl))
+  notNot <- setdiff(locPoly, union(mrk, qtl))
+  breedingData$history <- rbind(breedingData$history, data.frame(cycle=cycle, genoBase=speciesData$genArch$genoBase, nQTLpoly=length(c(mrkQtl, notMrkQtl)), nQTL=length(qtl), nMrkPoly=length(c(mrkQtl, mrkNotQtl)), length(mrk), meanGenoVal=genoMean, accuracy=thisCycleAccuracy, genoVar=genoVar, totChrVar=sum(chrVar, na.rm=TRUE), totSegVar=sum(segVar10[1,], na.rm=TRUE), equiVar=totEquiVar, selGenoValMain=breedingData$selGenoVal), mrkQtlPoly=length(mrkQtl), notMrkQtlPoly=length(notMrkQtl), mrkNotQtlPoly=length(mrkNotQtl), neutralPoly=length(notNot))
   return(breedingData)
 }#END analysis4LocCat
 
@@ -990,132 +982,255 @@ crossAdvanceMutUpdateUnobsQ <- function(cycle, breedingData){
 # Update means that you cumulate only at the end of phenotypic selection and
 # the two cycles that are phenotyped every other cycle
 crossAdvanceMutObsQ <- function(cycle, breedingData){
-	cat(cycle, "crossAdvanceMutate_UpdateObsQ", "\n")
-	
-	selectSet <- breedingData$selectSet
-	nLoc <- nrow(speciesData$map)
-	eo <- 1:nLoc * 2
-	qtl <- speciesData$genArch$locusList
-	#debugPlace <<- 0
-	#cat(debugPlace, "\n"); debugPlace <<- debugPlace+1
-	
-	# Loci only become monomorphic and fall out if a cycle gets dropped
-	dropCyc <- (cycle > 1 & cycle < switchCyc - breedingData$nStoredGen + 2) | (cycle >= switchCyc & cycle %% 2 == 0)
-	if (dropCyc){
-		if (setting %in% c(421) & cycle >= switchCyc){
-			toDrop <- which(breedingData$records$cycle < cycle - breedingData$nStoredGen + 2)
-		} else toDrop <- which(breedingData$records$cycle < cycle)
-		cat(cycle, "Dropping cycles", range(breedingData$records$cycle[toDrop]), "\n")
-		breedingData$genoMat <- breedingData$genoMat[-toDrop,]
-		selectSet <- selectSet - length(toDrop)
-		breedingData$selectSet <- selectSet
-		breedingData$records <- breedingData$records[-toDrop,]
-		monomorphic <- which(apply(rbind(breedingData$genoMat[, eo], breedingData$genoMat[, eo-1]), 2, sd) == 0)
-		# Take monomorphic out of the map
-		speciesData$map <<- speciesData$map[-monomorphic,]
-		# out of the QTL effects
-		monoQTL <- which(qtl %in% monomorphic)
-		fixQTLeff <- speciesData$genArch$effects[monoQTL]
-		fixQTLal <- breedingData$genoMat[1, qtl[monoQTL]*2]
-		shiftToGenoBase <- crossprod(fixQTLal, fixQTLeff)
-		speciesData$genArch$effects <<- speciesData$genArch$effects[-monoQTL]
-		# out of marker effect estimates
-		breedingData$mrkEffEst <- breedingData$mrkEffEst[-monomorphic]
-		breedingData$mrkEffVar <- breedingData$mrkEffVar[-monomorphic]
-		# out of the locus data
-		breedingData$genoMat <- breedingData$genoMat[, -(rep(monomorphic*2, each=2)-0:1)]
-		# out of nGenPoly
-		breedingData$nGenPoly <- breedingData$nGenPoly[-monomorphic]
-		breedingData$ancAllele <- breedingData$ancAllele[-monomorphic]
-		breedingData$cumulativeIncidences <- breedingData$cumulativeIncidences[-monomorphic]
-		# Renumber qtl and mrk
-		qtl <- which((1:nLoc)[-monomorphic] %in% qtl)
-	} else shiftToGenoBase <- 0
-	
-	# Make progeny with the remaining loci
-	selGenoMat <- breedingData$genoMat[selectSet,]
-	pedNgeno <- randomMate(selGenoMat, speciesData$map, breedingData$nSelCan, speciesData$chrMax, speciesData$progType)
-	mutInfo <- pedNgeno$mutInfo
-	newIDs <- max(breedingData$records$ID) + 1:breedingData$nSelCan
-	rownames(pedNgeno$genoMat) <- newIDs
-	newRecords <- data.frame(ID=newIDs, MID=selectSet[pedNgeno$pedigree[1,]], PID=selectSet[pedNgeno$pedigree[2,]], cycle=cycle + 1, genoVal=NA, phenoVal=NA, genoHat=NA)
-	breedingData$records <- rbind(breedingData$records, newRecords)
-	
-	nLoc <- nrow(speciesData$map)
-	eo <- 1:nLoc * 2
-	speciesData$nLoc <<- c(speciesData$nLoc, nLoc)
-	polyNow <- apply(rbind(pedNgeno$genoMat[, eo], pedNgeno$genoMat[, eo-1]), 2, sd) > 0
-	
-	# new genoMat has extra columns relative to old genoMat so add columns to the old
-	if (!is.null(mutInfo)){
-		nMut <- ncol(mutInfo)
-		mutAncAllele <- mutInfo["ancAllele",]
-		newLoc <- mutInfo["locIdx",]
-		oldLoc <- (1:nLoc)[-newLoc]
-		allLocOrd <- order(c(oldLoc, newLoc))
-		newGM <- breedingData$genoMat
-		newGM <- cbind(newGM, matrix(rep(mutAncAllele, each=nrow(newGM)*2), nrow=nrow(newGM)))
-		breedingData$genoMat <- rbind(newGM[,rep(allLocOrd, each=2)*2 - 1:0], pedNgeno$genoMat)
-		breedingData$ancAllele <- c(breedingData$ancAllele, mutAncAllele)[allLocOrd]
-		if (exists("cumulativeIncidences", breedingData)) breedingData$cumulativeIncidences <- c(breedingData$cumulativeIncidences, numeric(nMut))[allLocOrd]
-		
-		# The map and the genoMat are taken care of; deal with QTL and effects
-		nNewQTL <- floor(nMut / speciesData$ratioLocToQTL)
-		newQTLidx <- sample(nMut, nNewQTL)
-		qtlAncAl <- mutAncAllele[newQTLidx]
-		newEff <- rgamma(nNewQTL, 0.4) * (rbinom(nNewQTL, 1, 0.95) * 2 - 1)
-		newEff <- newEff * qtlAncAl
-		allMutEff <- numeric(nMut)
-		allMutEff[newQTLidx] <- newEff
-		mutInfo <- rbind(mutInfo, allMutEff)
-		newQTLidx <- newLoc[newQTLidx]
-		oldQTLidx <- oldLoc[qtl]
-		allQTL <- c(oldQTLidx, newQTLidx)
-		allQTLord <- order(allQTL)
-		speciesData$genArch$effects <<- c(speciesData$genArch$effects, newEff)[allQTLord]
-		qtl <- allQTL[allQTLord]
-		shiftToGenoBase <- shiftToGenoBase - crossprod(qtlAncAl, newEff)
-
-		# Adjust mrkEffEst, which has an est for _all_ loci
-		# E(var(mrkEff)) = rate / rLQ + rate^2 / rLQ - (rate * (2*pFav - 1)/2)^2
-		breedingData$mrkEffVar <- c(breedingData$mrkEffVar, rep(0.2476, nMut))[allLocOrd]
-		if (setting %in% c(421)) priorMrkEff <- 0 else priorMrkEff <- 0.18
-		breedingData$mrkEffEst <- c(breedingData$mrkEffEst, priorMrkEff * mutAncAllele)[allLocOrd]
-		# Take care of vector of nGenerations polymorphic
-		if (cycle == 1) breedingData$nGenPoly <- rep(1, length(oldLoc))
-		breedingData$nGenPoly <- c(breedingData$nGenPoly, numeric(nMut))[allLocOrd] + polyNow
-
-	} else{#END mutations _did_ happen above
-		# Below, mutations did not happen
-		breedingData$genoMat <- rbind(breedingData$genoMat, pedNgeno$genoMat)
-		breedingData$nGenPoly <- breedingData$nGenPoly + polyNow
-	}
-	
-	speciesData$genArch$locusList <<- qtl
-	speciesData$genArch$genoBase <<- speciesData$genArch$genoBase + shiftToGenoBase
+  cat(cycle, "crossAdvanceMutate_UpdateObsQ", "\n")
+  
+  selectSet <- breedingData$selectSet
+  nLoc <- nrow(speciesData$map)
+  eo <- 1:nLoc * 2
+  qtl <- speciesData$genArch$locusList
+  #debugPlace <<- 0
+  #cat(debugPlace, "\n"); debugPlace <<- debugPlace+1
+  
+  # Loci only become monomorphic and fall out if a cycle gets dropped
+  dropCyc <- (cycle > 1 & cycle < switchCyc - breedingData$nStoredGen + 2) | (cycle >= switchCyc & cycle %% 2 == 0)
+  if (dropCyc){
+    if (setting %in% c(421) & cycle >= switchCyc){
+      toDrop <- which(breedingData$records$cycle < cycle - breedingData$nStoredGen + 2)
+    } else toDrop <- which(breedingData$records$cycle < cycle)
+    cat(cycle, "Dropping cycles", range(breedingData$records$cycle[toDrop]), "\n")
+    breedingData$genoMat <- breedingData$genoMat[-toDrop,]
+    selectSet <- selectSet - length(toDrop)
+    breedingData$selectSet <- selectSet
+    breedingData$records <- breedingData$records[-toDrop,]
+    monomorphic <- which(apply(rbind(breedingData$genoMat[, eo], breedingData$genoMat[, eo-1]), 2, sd) == 0)
+    # Take monomorphic out of the map
+    speciesData$map <<- speciesData$map[-monomorphic,]
+    # out of the QTL effects
+    monoQTL <- which(qtl %in% monomorphic)
+    fixQTLeff <- speciesData$genArch$effects[monoQTL]
+    fixQTLal <- breedingData$genoMat[1, qtl[monoQTL]*2]
+    shiftToGenoBase <- crossprod(fixQTLal, fixQTLeff)
+    speciesData$genArch$effects <<- speciesData$genArch$effects[-monoQTL]
+    # out of marker effect estimates
+    breedingData$mrkEffEst <- breedingData$mrkEffEst[-monomorphic]
+    breedingData$mrkEffVar <- breedingData$mrkEffVar[-monomorphic]
+    # out of the locus data
+    breedingData$genoMat <- breedingData$genoMat[, -(rep(monomorphic*2, each=2)-0:1)]
+    # out of nGenPoly
+    breedingData$nGenPoly <- breedingData$nGenPoly[-monomorphic]
+    breedingData$ancAllele <- breedingData$ancAllele[-monomorphic]
+    breedingData$cumulativeIncidences <- breedingData$cumulativeIncidences[-monomorphic]
+    # Renumber qtl and mrk
+    qtl <- which((1:nLoc)[-monomorphic] %in% qtl)
+  } else shiftToGenoBase <- 0
+  
+  # Make progeny with the remaining loci
+  selGenoMat <- breedingData$genoMat[selectSet,]
+  pedNgeno <- randomMate(selGenoMat, speciesData$map, breedingData$nSelCan, speciesData$chrMax, speciesData$progType)
+  mutInfo <- pedNgeno$mutInfo
+  newIDs <- max(breedingData$records$ID) + 1:breedingData$nSelCan
+  rownames(pedNgeno$genoMat) <- newIDs
+  newRecords <- data.frame(ID=newIDs, MID=selectSet[pedNgeno$pedigree[1,]], PID=selectSet[pedNgeno$pedigree[2,]], cycle=cycle + 1, genoVal=NA, phenoVal=NA, genoHat=NA)
+  breedingData$records <- rbind(breedingData$records, newRecords)
+  
+  nLoc <- nrow(speciesData$map)
+  eo <- 1:nLoc * 2
+  speciesData$nLoc <<- c(speciesData$nLoc, nLoc)
+  polyNow <- apply(rbind(pedNgeno$genoMat[, eo], pedNgeno$genoMat[, eo-1]), 2, sd) > 0
+  
+  # new genoMat has extra columns relative to old genoMat so add columns to the old
+  if (!is.null(mutInfo)){
+    nMut <- ncol(mutInfo)
+    mutAncAllele <- mutInfo["ancAllele",]
+    newLoc <- mutInfo["locIdx",]
+    oldLoc <- (1:nLoc)[-newLoc]
+    allLocOrd <- order(c(oldLoc, newLoc))
+    newGM <- breedingData$genoMat
+    newGM <- cbind(newGM, matrix(rep(mutAncAllele, each=nrow(newGM)*2), nrow=nrow(newGM)))
+    breedingData$genoMat <- rbind(newGM[,rep(allLocOrd, each=2)*2 - 1:0], pedNgeno$genoMat)
+    breedingData$ancAllele <- c(breedingData$ancAllele, mutAncAllele)[allLocOrd]
+    if (exists("cumulativeIncidences", breedingData)) breedingData$cumulativeIncidences <- c(breedingData$cumulativeIncidences, numeric(nMut))[allLocOrd]
+    
+    # The map and the genoMat are taken care of; deal with QTL and effects
+    nNewQTL <- floor(nMut / speciesData$ratioLocToQTL)
+    newQTLidx <- sample(nMut, nNewQTL)
+    qtlAncAl <- mutAncAllele[newQTLidx]
+    newEff <- rgamma(nNewQTL, 0.4) * (rbinom(nNewQTL, 1, 0.95) * 2 - 1)
+    newEff <- newEff * qtlAncAl
+    allMutEff <- numeric(nMut)
+    allMutEff[newQTLidx] <- newEff
+    mutInfo <- rbind(mutInfo, allMutEff)
+    newQTLidx <- newLoc[newQTLidx]
+    oldQTLidx <- oldLoc[qtl]
+    allQTL <- c(oldQTLidx, newQTLidx)
+    allQTLord <- order(allQTL)
+    speciesData$genArch$effects <<- c(speciesData$genArch$effects, newEff)[allQTLord]
+    qtl <- allQTL[allQTLord]
+    shiftToGenoBase <- shiftToGenoBase - crossprod(qtlAncAl, newEff)
+    
+    # Adjust mrkEffEst, which has an est for _all_ loci
+    # E(var(mrkEff)) = rate / rLQ + rate^2 / rLQ - (rate * (2*pFav - 1)/2)^2
+    breedingData$mrkEffVar <- c(breedingData$mrkEffVar, rep(0.2476, nMut))[allLocOrd]
+    if (setting %in% c(421)) priorMrkEff <- 0 else priorMrkEff <- 0.18
+    breedingData$mrkEffEst <- c(breedingData$mrkEffEst, priorMrkEff * mutAncAllele)[allLocOrd]
+    # Take care of vector of nGenerations polymorphic
+    if (cycle == 1) breedingData$nGenPoly <- rep(1, length(oldLoc))
+    breedingData$nGenPoly <- c(breedingData$nGenPoly, numeric(nMut))[allLocOrd] + polyNow
+    
+  } else{#END mutations _did_ happen above
+    # Below, mutations did not happen
+    breedingData$genoMat <- rbind(breedingData$genoMat, pedNgeno$genoMat)
+    breedingData$nGenPoly <- breedingData$nGenPoly + polyNow
+  }
+  
+  speciesData$genArch$locusList <<- qtl
+  speciesData$genArch$genoBase <<- speciesData$genArch$genoBase + shiftToGenoBase
   if (exists("meanPhen", breedingData)) breedingData$meanPhen <- breedingData$meanPhen + shiftToGenoBase
-	breedingData$mutHist <- c(breedingData$mutHist, list(mutInfo))
-	# For loci that just became monomorphic, save:
-	# cycle; Chr and Pos; nGenerations polymorphic; effect; ancAllele; fixedAllele
-	# Which were poly last generation, but not now?  Store the values for those.
-	lastCyc <- breedingData$records$cycle == cycle # (Just created cycle + 1)
-	polyBefore <- apply(rbind(breedingData$genoMat[lastCyc, eo], breedingData$genoMat[lastCyc, eo-1]), 2, sd) > 0
-	newlyMono <- which(polyBefore & !polyNow)
-	effects <- numeric(length(newlyMono)) # Effect of the mutation
-	effects[newlyMono %in% qtl] <- speciesData$genArch$effects[qtl %in% newlyMono] * -breedingData$ancAllele[intersect(newlyMono, qtl)]
-	nGenPoly <- breedingData$nGenPoly[newlyMono]
-	ancAllele <- breedingData$ancAllele[newlyMono]
-	fixedAllele <- pedNgeno$genoMat[1, newlyMono*2]
-	monoInfo <- cbind(cycle, speciesData$map[newlyMono, c("Chr", "Pos")], nGenPoly, effects, ancAllele, fixedAllele)
-	breedingData$monoInfo <- rbind(breedingData$monoInfo, monoInfo)
-	
-	# save(breedingData, speciesData, file=paste("bDsD",cycle,"RData", sep="."))	
-	return(breedingData)
+  breedingData$mutHist <- c(breedingData$mutHist, list(mutInfo))
+  # For loci that just became monomorphic, save:
+  # cycle; Chr and Pos; nGenerations polymorphic; effect; ancAllele; fixedAllele
+  # Which were poly last generation, but not now?  Store the values for those.
+  lastCyc <- breedingData$records$cycle == cycle # (Just created cycle + 1)
+  polyBefore <- apply(rbind(breedingData$genoMat[lastCyc, eo], breedingData$genoMat[lastCyc, eo-1]), 2, sd) > 0
+  newlyMono <- which(polyBefore & !polyNow)
+  effects <- numeric(length(newlyMono)) # Effect of the mutation
+  effects[newlyMono %in% qtl] <- speciesData$genArch$effects[qtl %in% newlyMono] * -breedingData$ancAllele[intersect(newlyMono, qtl)]
+  nGenPoly <- breedingData$nGenPoly[newlyMono]
+  ancAllele <- breedingData$ancAllele[newlyMono]
+  fixedAllele <- pedNgeno$genoMat[1, newlyMono*2]
+  monoInfo <- cbind(cycle, speciesData$map[newlyMono, c("Chr", "Pos")], nGenPoly, effects, ancAllele, fixedAllele)
+  breedingData$monoInfo <- rbind(breedingData$monoInfo, monoInfo)
+  
+  # save(breedingData, speciesData, file=paste("bDsD",cycle,"RData", sep="."))	
+  return(breedingData)
 }#END cross advance obs QTL
+
+crossAdvance4LocCat <- function(cycle, breedingData){
+  cat(cycle, "crossAdvanceMutate_4LocCat", "\n")
+  
+  selectSet <- breedingData$selectSet
+  nLoc <- nrow(speciesData$map)
+  eo <- 1:nLoc * 2
+  qtl <- speciesData$genArch$locusList
+  mrk <- breedingData$observedLoc
+  
+  # Loci only become monomorphic and fall out if a cycle gets dropped
+  dropCyc <- (cycle > 1 & cycle < switchCyc - breedingData$nStoredGen + 2) | (cycle >= switchCyc & cycle %% 2 == 0)
+  if (dropCyc){
+    if (setting %in% c(421) & cycle >= switchCyc){
+      toDrop <- which(breedingData$records$cycle < cycle - breedingData$nStoredGen + 2)
+    } else toDrop <- which(breedingData$records$cycle < cycle)
+    cat(cycle, "Dropping cycles", range(breedingData$records$cycle[toDrop]), "\n")
+    breedingData$genoMat <- breedingData$genoMat[-toDrop,]
+    selectSet <- selectSet - length(toDrop)
+    breedingData$selectSet <- selectSet
+    breedingData$records <- breedingData$records[-toDrop,]
+    monomorphic <- which(apply(rbind(breedingData$genoMat[, eo], breedingData$genoMat[, eo-1]), 2, sd) == 0)
+    # Take monomorphic out of the map
+    speciesData$map <<- speciesData$map[-monomorphic,]
+    # out of the QTL effects
+    monoQTL <- which(qtl %in% monomorphic)
+    fixQTLeff <- speciesData$genArch$effects[monoQTL]
+    fixQTLal <- breedingData$genoMat[1, qtl[monoQTL]*2]
+    shiftToGenoBase <- crossprod(fixQTLal, fixQTLeff)
+    speciesData$genArch$effects <<- speciesData$genArch$effects[-monoQTL]
+    # out of marker effect estimates
+    breedingData$mrkEffEst <- breedingData$mrkEffEst[-monomorphic]
+    breedingData$mrkEffVar <- breedingData$mrkEffVar[-monomorphic]
+    # out of the locus data
+    breedingData$genoMat <- breedingData$genoMat[, -(rep(monomorphic*2, each=2)-0:1)]
+    # out of nGenPoly
+    breedingData$nGenPoly <- breedingData$nGenPoly[-monomorphic]
+    breedingData$ancAllele <- breedingData$ancAllele[-monomorphic]
+    breedingData$cumulativeIncidences <- breedingData$cumulativeIncidences[-monomorphic]
+    # Renumber qtl and mrk
+    qtl <- which((1:nLoc)[-monomorphic] %in% qtl)
+  } else shiftToGenoBase <- 0
+  
+  # Make progeny with the remaining loci
+  selGenoMat <- breedingData$genoMat[selectSet,]
+  pedNgeno <- randomMate(selGenoMat, speciesData$map, breedingData$nSelCan, speciesData$chrMax, speciesData$progType)
+  mutInfo <- pedNgeno$mutInfo
+  newIDs <- max(breedingData$records$ID) + 1:breedingData$nSelCan
+  rownames(pedNgeno$genoMat) <- newIDs
+  newRecords <- data.frame(ID=newIDs, MID=selectSet[pedNgeno$pedigree[1,]], PID=selectSet[pedNgeno$pedigree[2,]], cycle=cycle + 1, genoVal=NA, phenoVal=NA, genoHat=NA)
+  breedingData$records <- rbind(breedingData$records, newRecords)
+  
+  nLoc <- nrow(speciesData$map)
+  eo <- 1:nLoc * 2
+  speciesData$nLoc <<- c(speciesData$nLoc, nLoc)
+  polyNow <- apply(rbind(pedNgeno$genoMat[, eo], pedNgeno$genoMat[, eo-1]), 2, sd) > 0
+  
+  # new genoMat has extra columns relative to old genoMat so add columns to the old
+  if (!is.null(mutInfo)){
+    nMut <- ncol(mutInfo)
+    mutAncAllele <- mutInfo["ancAllele",]
+    newLoc <- mutInfo["locIdx",]
+    oldLoc <- (1:nLoc)[-newLoc]
+    allLocOrd <- order(c(oldLoc, newLoc))
+    newGM <- breedingData$genoMat
+    newGM <- cbind(newGM, matrix(rep(mutAncAllele, each=nrow(newGM)*2), nrow=nrow(newGM)))
+    breedingData$genoMat <- rbind(newGM[,rep(allLocOrd, each=2)*2 - 1:0], pedNgeno$genoMat)
+    breedingData$ancAllele <- c(breedingData$ancAllele, mutAncAllele)[allLocOrd]
+    if (exists("cumulativeIncidences", breedingData)) breedingData$cumulativeIncidences <- c(breedingData$cumulativeIncidences, numeric(nMut))[allLocOrd]
+    
+    # The map and the genoMat are taken care of; deal with QTL and effects
+    nNewQTL <- floor(nMut / speciesData$ratioLocToQTL)
+    newQTLidx <- sample(nMut, nNewQTL)
+    qtlAncAl <- mutAncAllele[newQTLidx]
+    newEff <- rgamma(nNewQTL, 0.4) * (rbinom(nNewQTL, 1, 0.95) * 2 - 1)
+    newEff <- newEff * qtlAncAl
+    allMutEff <- numeric(nMut)
+    allMutEff[newQTLidx] <- newEff
+    mutInfo <- rbind(mutInfo, allMutEff)
+    newQTLidx <- newLoc[newQTLidx]
+    oldQTLidx <- oldLoc[qtl]
+    allQTL <- c(oldQTLidx, newQTLidx)
+    allQTLord <- order(allQTL)
+    speciesData$genArch$effects <<- c(speciesData$genArch$effects, newEff)[allQTLord]
+    qtl <- allQTL[allQTLord]
+    shiftToGenoBase <- shiftToGenoBase - crossprod(qtlAncAl, newEff)
+    
+    # Adjust mrkEffEst, which has an est for _all_ loci
+    # E(var(mrkEff)) = rate / rLQ + rate^2 / rLQ - (rate * (2*pFav - 1)/2)^2
+    breedingData$mrkEffVar <- c(breedingData$mrkEffVar, rep(0.2476, nMut))[allLocOrd]
+    if (setting %in% c(421)) priorMrkEff <- 0 else priorMrkEff <- 0.18
+    breedingData$mrkEffEst <- c(breedingData$mrkEffEst, priorMrkEff * mutAncAllele)[allLocOrd]
+    # Take care of vector of nGenerations polymorphic
+    if (cycle == 1) breedingData$nGenPoly <- rep(1, length(oldLoc))
+    breedingData$nGenPoly <- c(breedingData$nGenPoly, numeric(nMut))[allLocOrd] + polyNow
+    
+  } else{#END mutations _did_ happen above
+    # Below, mutations did not happen
+    breedingData$genoMat <- rbind(breedingData$genoMat, pedNgeno$genoMat)
+    breedingData$nGenPoly <- breedingData$nGenPoly + polyNow
+  }
+  
+  speciesData$genArch$locusList <<- qtl
+  speciesData$genArch$genoBase <<- speciesData$genArch$genoBase + shiftToGenoBase
+  if (exists("meanPhen", breedingData)) breedingData$meanPhen <- breedingData$meanPhen + shiftToGenoBase
+  breedingData$mutHist <- c(breedingData$mutHist, list(mutInfo))
+  # For loci that just became monomorphic, save:
+  # cycle; Chr and Pos; nGenerations polymorphic; effect; ancAllele; fixedAllele
+  # Which were poly last generation, but not now?  Store the values for those.
+  lastCyc <- breedingData$records$cycle == cycle # (Just created cycle + 1)
+  polyBefore <- apply(rbind(breedingData$genoMat[lastCyc, eo], breedingData$genoMat[lastCyc, eo-1]), 2, sd) > 0
+  newlyMono <- which(polyBefore & !polyNow)
+  effects <- numeric(length(newlyMono)) # Effect of the mutation
+  effects[newlyMono %in% qtl] <- speciesData$genArch$effects[qtl %in% newlyMono] * -breedingData$ancAllele[intersect(newlyMono, qtl)]
+  nGenPoly <- breedingData$nGenPoly[newlyMono]
+  ancAllele <- breedingData$ancAllele[newlyMono]
+  fixedAllele <- pedNgeno$genoMat[1, newlyMono*2]
+  monoInfo <- cbind(cycle, speciesData$map[newlyMono, c("Chr", "Pos")], nGenPoly, effects, ancAllele, fixedAllele)
+  breedingData$monoInfo <- rbind(breedingData$monoInfo, monoInfo)
+  
+  # save(breedingData, speciesData, file=paste("bDsD",cycle,"RData", sep="."))  
+  return(breedingData)
+}#END crossAdvance4LocCat
 
 crossAdvanceMutPheno <- function(cycle, breedingData){
   cat(cycle, "crossAdvanceMutatePheno", "\n")
-
+  
   # Make progeny
   selectSet <- breedingData$selectSet
   selGenoMat <- breedingData$genoMat[selectSet,]
@@ -1173,7 +1288,7 @@ crossAdvanceMutPheno <- function(cycle, breedingData){
   fixedAllele <- pedNgeno$genoMat[1, monomorphic*2]
   monoInfo <- cbind(cycle, speciesData$map[monomorphic, c("Chr", "Pos")], nGenPoly, cumuIncid, effects, ancAllele, fixedAllele)
   breedingData$monoInfo <- rbind(breedingData$monoInfo, monoInfo)
-
+  
   # Take monomorphic out of the map
   speciesData$map <<- speciesData$map[-monomorphic,]
   # out of the QTL effects
