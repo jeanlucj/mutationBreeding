@@ -1,74 +1,12 @@
 ###############################################################
 ### Setting numbers for this selection program
 ###############################################################
-settings <- c(1004)
+settings <- c(2001)
 allNcycles <- rep(400, length(settings))
 
 settingReminder <- function(){
-  cat("Setting 1000 Baseline phenotypic selection, error std dev=8", "\n")
-  cat("Setting 1001 Baseline phenotypic selection with free recombination between loci", "\n")
-  cat("Setting 1002 Like 1000 but nSelCan=400", "\n")
-  cat("Setting 1003 Like 1001 but nSelCan=400", "\n")
-  cat("Setting 1004 Baseline genomic selection, seeking optimal nToSelect for GS", "\n")
-  cat("Setting 401 initiates improved marker updating algorithm", "\n")
-	cat("Setting 402 like 401 but takes expectation of markers into account", "\n")
-	cat("Setting 411 try to use mixed integer programming", "\n")
-	cat("Setting 421 compare to a slow mixed model analysis for every new update", "\n")
-	
-	cat("Setting 301 has unobserved QTL with equal numbers of markers", "\n")
-	cat("Setting 302 has unobserved QTL with 4 times more markers", "\n")
-	cat("Setting 303 has unobserved QTL with 7 times more markers", "\n")
-	cat("Setting 305 has observed QTL, with nMrk =~ nQTL", "\n")
-	cat("Setting 306 doubles the number of stored generations to 16", "\n")
-	cat("Setting 307 like 305 but takes the ancAllele orientation into account", "\n")
-	cat("Setting 308 like 307 but makes mutations _favorable_ initially", "\n")
-	cat("Setting 309 like 305 but weights rare favorable alleles", "\n")
-	cat("Setting 310 like 308 but makes mutations _favorable_ initially, with random boost", "\n")
-	cat("Setting 311 combines 309 and 310", "\n")
-	cat("Setting 312 stops mutation when you reach 200 cycles then does GS for 20 cycles", "\n")
-	cat("Setting 314 like 305 but nGenPoly into account in eMrkVar", "\n")
-	cat("Setting 315 like 314 but less severely", "\n")
-	cat("Setting 316 like 309 but extent of weighting is random", "\n")
-	cat("Setting 317 is a test of the machinery of 314", "\n")
-	cat("Setting 318 is a more stringent test of the machinery of 314", "\n")
-	cat("Setting 319 explores the prior effect, var, and weight space", "\n")
-	cat("Setting 320 Garrick: large effects are overweighted: take sqrt", "\n")
-	cat("Setting 321 & 322 Hill: explore different selection intensities", "\n")
-	cat("Setting 323: common sense: only phenotype the parents, but at 2x replication")
-	cat("Setting 325: first attempt to select the set of individuals to retain mutations")
-	cat("Setting 326: second attempt: 325 penalized the loss of mutations or ancestral alleles")
-	cat("Setting 327: third attempt: 327 increases penalty if mutation appears favorable")
-	
-	cat("Setting 206 doubles the number of stored generations to 16", "\n")
-	cat("Setting 207 starts marker effects off at their expectations, -0.18", "\n")
-	cat("Setting 208 doubles the number of candidates and selected", "\n")
-	cat("Setting 209 & 210 assume some ability to decide a mutation is good if it is", "\n")
-	cat("Setting 211 doubles the mutation rate", "\n")
-	cat("Setting 212 stops mutation when you reach 200 cycles then does GS for 20 cycles", "\n")
-	cat("Setting 213 attempts to use penalty.factor to shrink QTL effects less", "\n")
-	cat("Setting 214 fits penalty.factor as a function of nGenPoly", "\n")
-	cat("Setting 215 combines 214 with weighting of rare favorable alleles", "\n")
-	cat("Setting 216 fits penalty.factor as a function of nGenPoly for _ridge_ penalty", "\n")
-	cat("Setting 217 combines 216 with weighting of rare favorable alleles", "\n")
-	cat("Setting 218 uses constant penalty but weights rare favorable alleles", "\n")
-	cat("Setting 219 updates mrk eff by cycle starting at 0", "\n")
-	cat("Setting 220 updates mrk eff by cycle starting at 10% correlation", "\n")
-	cat("Setting 221 updates mrk eff by cycle starting at 50% correlation", "\n")
-	
-	cat("The following are all GBLUP based and were done with fixed loci (as opposed to locInOut)", "\n")
-	cat("6: all loci are QTL; nSelCan=100, nToSelect=20; TP=8 generations", "\n")
-	cat("7: like 6 but 50% of loci are QTL", "\n")
-	cat("8: like 6 but 25% of loci are QTL", "\n")
-	cat("9: like 6 but nSelCan=200, nToSelect=40", "\n")
-	cat("10: like 9 but 50% of loci are QTL", "\n")
-	cat("11: like 10 but rare favorable alleles are upweighted", "\n")
-	cat("12: like 10 but TP=4 generations", "\n")
-	cat("13: like 10 but separate relationship matrices are calculated for standing versus mutational variation", "\n")
-	cat("14: like 13 but in cycles where the model is updated, selects from best of last cyc with pheno and next cyc without", "\n")
-	cat("15: like 13 but in cycles where the model is updated, selects 30 from best of next cyc and 10 from last cyc with pheno that have high mutational BLUPs", "\n")
-	cat("16-18: like 13-15 but nSelCan=400, nToSelect=80", "\n")
-	cat("19: like 13 but rare favorable alleles are upweighted", "\n")
-	cat("20: like 19 but nSelCan=400, nToSelect=80", "\n")
+  cat("Using 4LocCat")
+  cat("Setting 2001 Baseline: error std dev=1, mutation effect=1, prob. fav.=0.5, nSelCan=200, causal unobserved with mut. rate=1, non-causal mut. rate=10, markers not standardized", "\n")
 }
 
 ###############################################################
@@ -77,7 +15,6 @@ settingReminder <- function(){
 ###############################################################
 initializeCreateData <- function(replication){
 	switchCyc <<- nCycles / 2
-	if (setting == 312) switchCyc <<- 200
 	if (makeFounderFiles){
 		mutNum <- 2
 		ratioLocToQTL <- 2
@@ -1117,9 +1054,7 @@ crossAdvance4LocCat <- function(cycle, breedingData){
   # Loci only become monomorphic and fall out if a cycle gets dropped
   dropCyc <- (cycle > 1 & cycle < switchCyc - breedingData$nStoredGen + 2) | (cycle >= switchCyc & cycle %% 2 == 0)
   if (dropCyc){
-    if (setting %in% c(421) & cycle >= switchCyc){
-      toDrop <- which(breedingData$records$cycle < cycle - breedingData$nStoredGen + 2)
-    } else toDrop <- which(breedingData$records$cycle < cycle)
+    toDrop <- which(breedingData$records$cycle < cycle)
     cat(cycle, "Dropping cycles", range(breedingData$records$cycle[toDrop]), "\n")
     breedingData$genoMat <- breedingData$genoMat[-toDrop,]
     selectSet <- selectSet - length(toDrop)
@@ -1135,6 +1070,7 @@ crossAdvance4LocCat <- function(cycle, breedingData){
     shiftToGenoBase <- crossprod(fixQTLal, fixQTLeff)
     speciesData$genArch$effects <<- speciesData$genArch$effects[-monoQTL]
     # out of marker effect estimates
+    # !! This assumes all loci have estimated effects
     breedingData$mrkEffEst <- breedingData$mrkEffEst[-monomorphic]
     breedingData$mrkEffVar <- breedingData$mrkEffVar[-monomorphic]
     # out of the locus data
