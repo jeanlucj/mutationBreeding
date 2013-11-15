@@ -233,7 +233,9 @@ randomMate <- function(markers, map, popSize, chrMax, progType){
 # with loci sometimes being assigned as QTL
 # Only create as many loci as will be polymorphic
 # Does not return a genotype matrix, only a matrix of founder haplotypes
-createSpeciesData <- function(effPopSize, mutNum, ratioLocToQTL, seed=round(runif(1, 0, 1e9))){
+# Percent four locus cat has to sum to 1 and be in this order
+# causal_Obs, causal_notObs, notCausal_Obs, notCausal_notObs
+createSpeciesData <- function(effPopSize, mutNum, perc4LocCat, seed=round(runif(1, 0, 1e9))){
 	set.seed(seed)
 		
 	nChr <- 7
@@ -243,6 +245,9 @@ createSpeciesData <- function(effPopSize, mutNum, ratioLocToQTL, seed=round(runi
 	# Calculation for the number of loci that will be polymorphic initially
 	nLoc <- ceiling(4 * effPopSize * mutNum * sum(1 / 1:(effPopSize - 1)))
 
+  # percQTL: percent QTL among all loci
+	percQTL  <-  sum(perc4LocCat[1:2])
+  
 	# Start with a sample with reasonable polymorphism from a coalescent
 	piecesPerM <- 2000
 	nPiecesPerChr <- lengthChr / 100 * piecesPerM
@@ -274,11 +279,12 @@ createSpeciesData <- function(effPopSize, mutNum, ratioLocToQTL, seed=round(runi
 		effects[effTooBig] <- rgamma(sum(effTooBig), 0.4)
 		return(effects * (rbinom(nEffects, 1, 0.5) * 2 - 1))
 	}
+  
 	# sample which loci are candidates to be QTL
-	genArch  <- sampleGeneticArchitecture(nLoc, nLoc / ratioLocToQTL, effectStdDev=sampleEffects, meanInteractionOrder=0, probDominance=0, inbredReference=FALSE, replace=FALSE)
+	genArch  <- sampleGeneticArchitecture(nLoc, nLoc * percQTL, effectStdDev=sampleEffects, meanInteractionOrder=0, probDominance=0, inbredReference=FALSE, replace=FALSE)
 	genArch$locusList <- sort(genArch$locusList)
 	
-	mutParms <- list(mutNum=mutNum)
+	mutParms <- list(mutNum=mutNum, perc4LocCat=perc4LocCat)
 	
 	# Function to translate uniform positions to on with restricted rec in centromere
 	unifToPos <- function(thePos){ # WARNING: assumes 0 and 150 are min & max of position
@@ -299,7 +305,7 @@ createSpeciesData <- function(effPopSize, mutNum, ratioLocToQTL, seed=round(runi
   # For now I just want this to be simple
   unifToPos <- function(thePos) return(thePos)
   
-	return(list(map=fMap, chrMax=fChrMax, genArch=genArch, founderHaps=fHaps, ancestralState=ancestralState, progType=progType, randSeed=seed, mutParms=mutParms, ratioLocToQTL=ratioLocToQTL, unifToPos=unifToPos, cycle=-1))
+	return(list(map=fMap, chrMax=fChrMax, genArch=genArch, founderHaps=fHaps, ancestralState=ancestralState, progType=progType, randSeed=seed, mutParms=mutParms, percQTL=percQTL, unifToPos=unifToPos, cycle=-1))
 }#END createSpeciesData
 
 # Function to create the base population
@@ -314,12 +320,12 @@ createBreedingData <- function(nSelCan, nToSelect, nStoredGen, seed=round(runif(
 	genoMat <- randomMate(ftwoColMrk, speciesData$map, nSelCan, speciesData$chrMax, speciesData$progType)
 	mutInfo <- genoMat$mutInfo
 	genoMat <- genoMat$genoMat
-	nLoc <- nrow(speciesData$map)
+	nLoc <- nrow(speciesData$map) # Map is updated so this is the total # of loci
 	newAncAllele <- mutInfo["ancAllele",]
 	nMut <- ncol(mutInfo)
 	newLoc <- mutInfo["locIdx",]
 	oldLoc <- (1:nLoc)[-newLoc]
-	nNewQTL <- floor(nMut / speciesData$ratioLocToQTL)
+	nNewQTL <- floor(nMut * speciesData$percQTL)
 	ancAllele <- c(speciesData$ancestralState, newAncAllele)[order(c(oldLoc, newLoc))]
 	newQTLidx <- sample(newLoc, nNewQTL)
 	newEff <- rgamma(nNewQTL, 0.4) * (rbinom(nNewQTL, 1, 0.95) * 2 - 1)
@@ -329,12 +335,22 @@ createBreedingData <- function(nSelCan, nToSelect, nStoredGen, seed=round(runif(
 	allQTLord <- order(allQTL)
 	speciesData$genArch$effects <<- c(speciesData$genArch$effects, newEff)[allQTLord]
 	speciesData$genArch$locusList <<- allQTL[allQTLord]
-	
+  
+  # Figure out which loci are observed markers
+	# Percent four locus cat has to sum to 1 and be in this order
+	# causal_Obs, causal_notObs, notCausal_Obs, notCausal_notObs
+	percObsQTL <- speciesData$mutParms$perc4LocCat
+	percObsNonQTL <- percObsQTL[3] / sum(percObsQTL[3:4])
+	percObsQTL <- percObsQTL[1] / sum(percObsQTL[1:2])
+	obsQTL <- sample(allQTL, round(percObsQTL * length(allQTL)))
+  obsNonQTL <- sample((1:nLoc)[-allQTL], round(percObsNonQTL * (nLoc - length(allQTL))))
+  observedLoc <- sort(c(obsQTL, obsNonQTL))
+  
 	# How big can the training population become?
 	maxRecordNum <- nStoredGen * nSelCan
 	# These are the first selection candidates
 	records <- data.frame(ID=1:nSelCan, MID=0, PID=0, cycle=1, genoVal=NA, phenoVal=NA, genoHat=NA)
-	return(list(genoMat=genoMat, records=records, ancAllele=ancAllele, allSelectSet=NULL, IDtoRow=1:nSelCan, heritability=heritability, stdDevErr=initStdDevErr, nSelCan=nSelCan, nToSelect=nToSelect, nStoredGen=nStoredGen, maxRecordNum=maxRecordNum, randSeed=seed))
+	return(list(genoMat=genoMat, observedLoc=observedLoc, records=records, ancAllele=ancAllele, allSelectSet=NULL, IDtoRow=1:nSelCan, stdDevErr=initStdDevErr, nSelCan=nSelCan, nToSelect=nToSelect, nStoredGen=nStoredGen, maxRecordNum=maxRecordNum, randSeed=seed))
 }#END createBreedingData
 
 ####################################################################################
