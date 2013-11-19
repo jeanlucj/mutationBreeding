@@ -87,8 +87,9 @@ phenotypeGenomic <- function(cycle, breedingData){
 		}
 		breedingData$records$phenoVal[phenRows] <- tmp$phenoVal
     # Keep track of how often each mutant has been phenotyped
-		eo <- 1:nrow(speciesData$map) * 2 # WARNING: will need to refigure this out
-		inst <- -breedingData$ancAllele * colSums(breedingData$genoMat[phenRows, eo-1] + breedingData$genoMat[phenRows, eo]) / 2 + length(phenRows)
+		eo <- 1:nrow(speciesData$map) * 2
+    # WARNING: will need to refigure this out (though I think it's right)
+		inst <- colSums(breedingData$genoMat[phenRows, eo-1] + breedingData$genoMat[phenRows, eo]) / 2 + length(phenRows)
 		breedingData$cumulativeIncidences <- breedingData$cumulativeIncidences + inst
 	}
 	cat(cycle, "phenotypeGenomic", range(phenRows), "\n")
