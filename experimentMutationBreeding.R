@@ -135,8 +135,9 @@ randomMateDiploid <- function(markers, map, popSize, chrMax, selfingAllowed=FALS
 		indNumVec <- gamNumVec %/% 2 + 1
 		matOrPat <- gamNumVec %% 2
 		coord <- cbind(matOrPat * popSize + indNumVec, 1:nMut)
-		ancAllele <- rbinom(nMut, 1, 0.5) * 2 - 1
-		newGeno <- matrix(rep(ancAllele, each=nGam), nrow=nGam)
+		# ancAllele <- rbinom(nMut, 1, 0.5) * 2 - 1
+		# newGeno <- matrix(rep(ancAllele, each=nGam), nrow=nGam)
+		newGeno <- matrix(rep(-1, each=nGam), nrow=nGam)
 		newGeno[coord] <- -newGeno[coord]
 		# Integrate into map and genoMat: sort genoMat then reform it
 		allCumuPos <- c(cumuPos , speciesData$map[,3])
@@ -151,8 +152,10 @@ randomMateDiploid <- function(markers, map, popSize, chrMax, selfingAllowed=FALS
 		speciesData$map <<- rbind(cbind(Chr, Pos, cumuPos), speciesData$map)[locOrd,]
 		genoMat <- cbind(newGeno , rbind(genoMat[,1:nLoc * 2 - 1], genoMat[,1:nLoc * 2]))[,locOrd]
 		genoMat <- matrix(genoMat, nrow=popSize)
-		mutInfo <- rbind(indNumVec, matOrPat, ancAllele, locRnk[1:nMut])
-		rownames(mutInfo) <- c("mutInd", "mutGam", "ancAllele", "locIdx")
+		# mutInfo <- rbind(indNumVec, matOrPat, ancAllele, locRnk[1:nMut])
+		# rownames(mutInfo) <- c("mutInd", "mutGam", "ancAllele", "locIdx")
+		mutInfo <- rbind(indNumVec, matOrPat, locRnk[1:nMut])
+		rownames(mutInfo) <- c("mutInd", "mutGam", "locIdx")
 	} else mutInfo <- NULL
 	return(list(pedigree=parMat, genoMat=genoMat, mutInfo=mutInfo))
 }#END random mate diploid
@@ -190,8 +193,9 @@ randomMateDH <- function(markers, map, popSize, chrMax){
 		# Make loci with one mutant individual
 		indNumVec <- unlist(sapply(1:popSize, function(indNum) rep(indNum, mutPerInd[indNum])))
 		coord <- cbind(indNumVec, 1:nMut)
-		ancAllele <- rbinom(nMut, 1, 0.5) * 2 - 1
-		newGeno <- matrix(rep(ancAllele, each=popSize), nrow=popSize)
+		# ancAllele <- rbinom(nMut, 1, 0.5) * 2 - 1
+		# newGeno <- matrix(rep(ancAllele, each=popSize), nrow=popSize)
+		newGeno <- matrix(rep(-1, each=popSize), nrow=popSize) # -1 is the ancestral allele
 		newGeno[coord] <- -newGeno[coord]
 		# Integrate into map and genoMat
 		allCumuPos <- c(locCumuPos , speciesData$map[,3])
@@ -200,8 +204,10 @@ randomMateDH <- function(markers, map, popSize, chrMax){
 		speciesData$map <<- rbind(cbind(locChr, locPos, locCumuPos), speciesData$map)[locOrd,]
 		genoMat <- cbind(newGeno, genoMat[,1:nLoc * 2])[,locOrd]
 		genoMat <- matrix(rbind(genoMat, genoMat), nrow=popSize)
-		mutInfo <- rbind(indNumVec, ancAllele, locRnk[1:nMut])
-		rownames(mutInfo) <- c("mutInd", "ancAllele", "locIdx")
+		# mutInfo <- rbind(indNumVec, ancAllele, locRnk[1:nMut])
+		# rownames(mutInfo) <- c("mutInd", "ancAllele", "locIdx")
+		mutInfo <- rbind(indNumVec, locRnk[1:nMut])
+		rownames(mutInfo) <- c("mutInd", "locIdx")
 	} else mutInfo <- NULL
 	return(list(pedigree=parMat, genoMat=genoMat, mutInfo=mutInfo))
 }#END random mate diploid
@@ -235,6 +241,7 @@ randomMate <- function(markers, map, popSize, chrMax, progType){
 # Does not return a genotype matrix, only a matrix of founder haplotypes
 # Percent four locus cat has to sum to 1 and be in this order
 # causal_Obs, causal_notObs, notCausal_Obs, notCausal_notObs
+# 4           3               2             1               : locusType numbers
 createSpeciesData <- function(effPopSize, mutNum, perc4LocCat, seed=round(runif(1, 0, 1e9))){
 	set.seed(seed)
 		
@@ -254,9 +261,9 @@ createSpeciesData <- function(effPopSize, mutNum, perc4LocCat, seed=round(runif(
 	recBTpieces <- 1 / piecesPerM
 	coalSim <- getCoalescentSim(effPopSize=effPopSize, nMrkOrMut=nLoc, nChr=nChr, nPiecesPerChr=nPiecesPerChr, recBTpieces=recBTpieces, minMAF=0.01, seed=seed)
 	fHaps <- coalSim$markers
-	# Scramble ancestral state
-	ancestralState <- rbinom(nLoc, 1, 0.5) * 2 - 1
-	fHaps[,ancestralState == 1] <- 1 - fHaps[,ancestralState == 1]
+	# No longer: Scramble ancestral state
+	# ancestralState <- rbinom(nLoc, 1, 0.5) * 2 - 1
+	# fHaps[,ancestralState == 1] <- 1 - fHaps[,ancestralState == 1]
 	fHaps <- fHaps * 2 - 1
 	
   # Set up the map: set the first and last loci on each chr to pos 0 and lengthChr
@@ -305,7 +312,8 @@ createSpeciesData <- function(effPopSize, mutNum, perc4LocCat, seed=round(runif(
   # For now I just want this to be simple
   unifToPos <- function(thePos) return(thePos)
   
-	return(list(map=fMap, chrMax=fChrMax, genArch=genArch, founderHaps=fHaps, ancestralState=ancestralState, progType=progType, randSeed=seed, mutParms=mutParms, percQTL=percQTL, unifToPos=unifToPos, cycle=-1))
+	# return(list(map=fMap, chrMax=fChrMax, genArch=genArch, founderHaps=fHaps, ancestralState=ancestralState, progType=progType, randSeed=seed, mutParms=mutParms, percQTL=percQTL, unifToPos=unifToPos, cycle=-1))
+	return(list(map=fMap, chrMax=fChrMax, genArch=genArch, founderHaps=fHaps, progType=progType, randSeed=seed, mutParms=mutParms, percQTL=percQTL, unifToPos=unifToPos, cycle=-1))
 }#END createSpeciesData
 
 # Function to create the base population
@@ -321,15 +329,15 @@ createBreedingData <- function(nSelCan, nToSelect, nStoredGen, seed=round(runif(
 	mutInfo <- genoMat$mutInfo
 	genoMat <- genoMat$genoMat
 	nLoc <- nrow(speciesData$map) # Map is updated so this is the total # of loci
-	newAncAllele <- mutInfo["ancAllele",]
+	# newAncAllele <- mutInfo["ancAllele",]
 	nMut <- ncol(mutInfo)
 	newLoc <- mutInfo["locIdx",]
 	oldLoc <- (1:nLoc)[-newLoc]
 	nNewQTL <- floor(nMut * speciesData$percQTL)
-	ancAllele <- c(speciesData$ancestralState, newAncAllele)[order(c(oldLoc, newLoc))]
+	# ancAllele <- c(speciesData$ancestralState, newAncAllele)[order(c(oldLoc, newLoc))]
 	newQTLidx <- sample(newLoc, nNewQTL)
-	newEff <- rgamma(nNewQTL, 0.4) * (rbinom(nNewQTL, 1, 0.95) * 2 - 1)
-	newEff <- newEff * ancAllele[newQTLidx]
+	newEff <- rgamma(nNewQTL, 0.4) * (rbinom(nNewQTL, 1, 0.05) * 2 - 1)
+	# newEff <- newEff * ancAllele[newQTLidx]
 	oldQTLidx <- oldLoc[speciesData$genArch$locusList]
 	allQTL <- c(oldQTLidx, newQTLidx)
 	allQTLord <- order(allQTL)
@@ -350,7 +358,8 @@ createBreedingData <- function(nSelCan, nToSelect, nStoredGen, seed=round(runif(
 	maxRecordNum <- nStoredGen * nSelCan
 	# These are the first selection candidates
 	records <- data.frame(ID=1:nSelCan, MID=0, PID=0, cycle=1, genoVal=NA, phenoVal=NA, genoHat=NA)
-	return(list(genoMat=genoMat, observedLoc=observedLoc, records=records, ancAllele=ancAllele, allSelectSet=NULL, IDtoRow=1:nSelCan, stdDevErr=initStdDevErr, nSelCan=nSelCan, nToSelect=nToSelect, nStoredGen=nStoredGen, maxRecordNum=maxRecordNum, randSeed=seed))
+	# return(list(genoMat=genoMat, observedLoc=observedLoc, records=records, ancAllele=ancAllele, allSelectSet=NULL, IDtoRow=1:nSelCan, stdDevErr=initStdDevErr, nSelCan=nSelCan, nToSelect=nToSelect, nStoredGen=nStoredGen, maxRecordNum=maxRecordNum, randSeed=seed))
+	return(list(genoMat=genoMat, observedLoc=observedLoc, records=records, allSelectSet=NULL, IDtoRow=1:nSelCan, stdDevErr=initStdDevErr, nSelCan=nSelCan, nToSelect=nToSelect, nStoredGen=nStoredGen, maxRecordNum=maxRecordNum, randSeed=seed))
 }#END createBreedingData
 
 ####################################################################################
